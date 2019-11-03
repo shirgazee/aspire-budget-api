@@ -6,7 +6,8 @@
 *.user
 *.userosscache
 *.sln.docstates
-TestConsoleApp/
+appsettings.Development.json
+AspireBudget API-*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

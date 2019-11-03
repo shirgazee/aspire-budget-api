@@ -40,23 +40,23 @@ namespace AspireBudgetApi
         {
         }
 
-        public async Task<IEnumerable<string>> GetCategoriesAsync()
+        public async Task<List<string>> GetCategoriesAsync()
         {
             return await GetValuesFromSingleColumn(Options.CategoriesRange);
         }
 
-        public async Task<IEnumerable<string>> GetAccountsAsync()
+        public async Task<List<string>> GetAccountsAsync()
         {
             return await GetValuesFromSingleColumn(Options.AccountsRange);
         }
 
-        private async Task<IEnumerable<string>> GetValuesFromSingleColumn(string range)
+        private async Task<List<string>> GetValuesFromSingleColumn(string range)
         {
             var response = await _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, range).ExecuteAsync();
             var values = response.Values;
             if (values == null || values.Count == 0)
             {
-                return Enumerable.Empty<string>();
+                return new List<string>();
             }
 
             var result = new List<string>();
@@ -67,7 +67,38 @@ namespace AspireBudgetApi
             return result;
         }
 
-        public async Task<IEnumerable<Transaction>> GetTransactionsAsync(int lastCount = 0)
+        public async Task<List<Transaction>> GetTransactionsAsync(int lastCount = 0)
+        {
+            var list = await GetTransactionsAndAccountTransfersAsync();
+
+            var result = list.Where(x => x.Category != Options.AccountTransferCategory).ToList();
+
+            // not optimal because we cannot be sure that transactions are in correct date order in google sheet
+            if (lastCount > 0 && lastCount < result.Count)
+            {
+                result = result.OrderByDescending(x => x.Date).Take(lastCount).OrderBy(x => x.Date).ToList();
+            }
+
+            return result;
+        }
+
+        public async Task<List<AccountTransfer>> GetAccountTranfersAsync(int lastCount = 0)
+        {
+            var list = await GetTransactionsAndAccountTransfersAsync();
+
+            var transactions = list.Where(x => x.Category == Options.AccountTransferCategory).ToList();
+            var result = ParseAccountTransfersFromTransactions(transactions);
+
+            // not optimal because we cannot be sure that transactions are in correct date order in google sheet
+            if (lastCount > 0 && lastCount < result.Count)
+            {
+                result = result.OrderByDescending(x => x.Date).Take(lastCount).OrderBy(x => x.Date).ToList();
+            }
+
+            return result;
+        }
+
+        private async Task<List<Transaction>> GetTransactionsAndAccountTransfersAsync()
         {
             var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.TransactionsRange);
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
@@ -76,30 +107,69 @@ namespace AspireBudgetApi
 
             if (values == null || values.Count == 0)
             {
-                return Enumerable.Empty<Transaction>();
-            }
-            if (lastCount > 0 && lastCount < values.Count)
-            {
-                values = values.Skip(values.Count - lastCount).ToList();
+                return new List<Transaction>();
             }
 
-            var result = new List<Transaction>();
+            var list = new List<Transaction>();
             foreach (var row in values)
             {
                 try
                 {
                     var transaction = Transaction.FromGoogleRow(row);
-                    result.Add(transaction);
+                    list.Add(transaction);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Transaction instancing error");
                 }
             }
+
+            return list;
+        }
+
+        private List<AccountTransfer> ParseAccountTransfersFromTransactions(List<Transaction> transactions)
+        {
+            var result = new List<AccountTransfer>();
+            while (transactions.Count > 1)
+            {
+                var t1 = transactions.First();
+                var t2 = transactions.FirstOrDefault(x =>
+                    x.Date == t1.Date && Math.Abs(x.Inflow - t1.Outflow) < 0.01 &&
+                    Math.Abs(x.Outflow - t1.Inflow) < 0.01);
+
+                if (t2 == null)
+                {
+                    _logger.LogError($"Did not find matching account tranfer at {t1.Date.ToShortDateString()}");
+                    continue;
+                }
+
+                result.Add(AccountTransfer.FromTransactions(t1, t2));
+
+                transactions.Remove(t1);
+                transactions.Remove(t2);
+            }
+
+            if(transactions.Count != 0)
+            {
+                _logger.LogError("Did not find matching account tranfers, please recheck your google sheet.");
+            }
+
             return result;
         }
 
-        public async Task<IEnumerable<CategoryTransfer>> GetCategoryTransfersAsync(int month = 0)
+        public async Task<bool> SaveAccountTransferAsync(AccountTransfer transfer)
+        {
+            var result = true;
+            var transactions = AccountTransfer.ToTransactions(transfer);
+            foreach (var transaction in transactions)
+            {
+                result = result && await SaveTransactionAsync(transaction);
+            }
+
+            return result;
+        }
+
+        public async Task<List<CategoryTransfer>> GetCategoryTransfersAsync(int month = 0)
         {
             var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.CategoryTransfersRange);
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
@@ -108,9 +178,9 @@ namespace AspireBudgetApi
 
             if (values == null || values.Count == 0)
             {
-                return Enumerable.Empty<CategoryTransfer>();
+                return new List<CategoryTransfer>();
             }
-            
+
             var result = new List<CategoryTransfer>();
             foreach (var row in values)
             {
@@ -130,6 +200,26 @@ namespace AspireBudgetApi
             }
             return result;
         }
+        public async Task<bool> SaveCategoryTranferAsync(CategoryTransfer transfer)
+        {
+            IList<object> row = null;
+            try
+            {
+                row = CategoryTransfer.ToGoogleRow(transfer);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Google row instancing error");
+                return false;
+            }
+
+            var valueRange = new ValueRange { Values = new List<IList<object>> { row } };
+
+            var appendRequest = _sheetsService.Spreadsheets.Values.Append(valueRange, _spreadSheetId, Options.CategoryTransfersRange);
+            appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+            var response = await appendRequest.ExecuteAsync();
+            return response.Updates.UpdatedRows == 1;
+        }
 
         public async Task<bool> SaveTransactionAsync(Transaction transaction)
         {
@@ -143,8 +233,8 @@ namespace AspireBudgetApi
                 _logger.LogError(ex, "Google row instancing error");
                 return false;
             }
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { row };
+
+            var valueRange = new ValueRange { Values = new List<IList<object>> { row } };
 
             var appendRequest = _sheetsService.Spreadsheets.Values.Append(valueRange, _spreadSheetId, Options.TransactionsRange);
             appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;

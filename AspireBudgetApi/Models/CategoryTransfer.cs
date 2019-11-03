@@ -1,6 +1,7 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace AspireBudgetApi.Models
@@ -19,21 +20,26 @@ namespace AspireBudgetApi.Models
             {
                 throw new ArgumentException($"Incorrect date in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
+
             if(string.IsNullOrWhiteSpace(tranfer.FromCategory))
             {
                 throw new ArgumentException($"No FromCategory specified in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
+
             if (string.IsNullOrWhiteSpace(tranfer.ToCategory))
             {
                 throw new ArgumentException($"No ToCategory specified in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
 
-            var result = new List<object>();
-            result.Add(tranfer.Date.ToString("yyyy-MM-dd"));
-            result.Add(tranfer.Amount.ToString());    
-            result.Add(tranfer.FromCategory.ToString());
-            result.Add(tranfer.ToCategory.ToString());
-            result.Add(tranfer.Memo?.ToString() ?? "");
+            var result = new List<object>
+            {
+                tranfer.Date.ToString("yyyy-MM-dd"),
+                tranfer.Amount.ToString(CultureInfo.InvariantCulture),
+                tranfer.FromCategory.ToString(),
+                tranfer.ToCategory.ToString(),
+                tranfer.Memo?.ToString() ?? ""
+            };
+
             return result;
         }
 
@@ -43,6 +49,7 @@ namespace AspireBudgetApi.Models
             {
                 throw new ArgumentException($"No data in row for {nameof(CategoryTransfer)}.{nameof(FromGoogleRow)} initializer");
             }
+
             int.TryParse(row[0].ToString(), out var days);
             double.TryParse(row[1].ToString(), out var amount);
             var result = new CategoryTransfer
@@ -52,10 +59,12 @@ namespace AspireBudgetApi.Models
                 FromCategory = row[2].ToString(),
                 ToCategory = row[3].ToString(),
             };
+
             if(row.Count == 5)
             {
                 result.Memo = row[4].ToString();
             }
+
             return result;
         }
     }

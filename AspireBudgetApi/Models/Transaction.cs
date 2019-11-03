@@ -1,6 +1,7 @@
 ﻿using Google.Apis.Sheets.v4.Data;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace AspireBudgetApi.Models
@@ -32,26 +33,29 @@ namespace AspireBudgetApi.Models
 
             var result = new List<object>();
             result.Add(transaction.Date.ToString("yyyy-MM-dd"));
+
             if (transaction.Outflow != 0)
             {
-                result.Add(transaction.Outflow.ToString());
+                result.Add(transaction.Outflow.ToString(CultureInfo.InvariantCulture));
             }
             else
             {
                 result.Add("");
             }
+
             if (transaction.Inflow != 0)
             {
-                result.Add(transaction.Inflow.ToString());
+                result.Add(transaction.Inflow.ToString(CultureInfo.InvariantCulture));
             }
             else
             {
                 result.Add("");
             }
-            result.Add(transaction.Category.ToString());
-            result.Add(transaction.Account.ToString());
-            result.Add(transaction.Memo?.ToString() ?? "");
-            result.Add(transaction.Cleared?.ToString() ?? "");
+
+            result.Add(transaction.Category);
+            result.Add(transaction.Account);
+            result.Add(transaction.Memo ?? "");
+            result.Add(transaction.Cleared ?? "");
             return result;
         }
 
@@ -69,8 +73,8 @@ namespace AspireBudgetApi.Models
                 Date = Options.GoogleStartDate.AddDays(days),
                 Outflow = outflow,
                 Inflow = inflow,
-                Category = row[3].ToString(),
-                Account = row[4].ToString(),
+                Category = row[3].ToString().Trim(),
+                Account = row[4].ToString().Trim(),
             };
             if(row.Count > 5)
             {
