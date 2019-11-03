@@ -1,5 +1,7 @@
 ## .Net Standard Api for your Aspire Budget spreadsheet
 
+Current version of this library supports **Aspire Budget v2.8**.
+
 At first you need to turn on the Google Sheets API and obtain credentials. Follow the link and repeat steps under "Configuring Google infrastracture": ([https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3](https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3 "https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3")).
 
 In short 😁, you will: 
