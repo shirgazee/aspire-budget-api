@@ -25,98 +25,98 @@ namespace TestConsoleApp
             {
                 #region GetCategories
 
-                var categories = api.GetCategoriesAsync().Result;
-                foreach(var category in categories)
-                {
-                    Console.WriteLine(category);
-                }
+                //var categories = api.GetCategoriesAsync().Result;
+                //foreach(var category in categories)
+                //{
+                //    Console.WriteLine(category);
+                //}
 
                 #endregion
 
                 #region GetAccounts
 
-                var accounts = api.GetAccountsAsync().Result;
-                foreach (var account in accounts)
-                {
-                    Console.WriteLine(account);
-                }
+                //var accounts = api.GetAccountsAsync().Result;
+                //foreach (var account in accounts)
+                //{
+                //    Console.WriteLine(account);
+                //}
 
                 #endregion
 
                 #region GetTransactions
 
-                var transactions = api.GetTransactionsAsync(100).Result.ToList();
-                for(int i =0; i < transactions.Count; i++)
-                {
-                    var transaction = transactions[i];
-                    Console.WriteLine($"#{i} {transaction.Date} {transaction.Inflow} {transaction.Outflow} {transaction.Category} {transaction.Account} {transaction.Memo}");
-                }
+                //var transactions = api.GetTransactionsAsync(100).Result.ToList();
+                //for(int i =0; i < transactions.Count; i++)
+                //{
+                //    var transaction = transactions[i];
+                //    Console.WriteLine($"#{i} {transaction.Date} {transaction.Inflow} {transaction.Outflow} {transaction.Category} {transaction.Account} {transaction.Memo}");
+                //}
 
                 #endregion
 
                 #region SaveTransaction
 
-                var testTransaction = new Transaction
-                {
-                    Date = DateTime.Today,
-                    Outflow = 1,
-                    Category = YOUR_CATEGORY,
-                    Account = YOUR_ACCOUT,
-                    Memo = "Test",
-                    Cleared = "🆗"
-                };
-                var saveResult = api.SaveTransactionAsync(testTransaction).Result;
+                //var testTransaction = new Transaction
+                //{
+                //    Date = DateTime.Today,
+                //    Outflow = 1,
+                //    Category = YOUR_CATEGORY,
+                //    Account = YOUR_ACCOUT,
+                //    Memo = "Test",
+                //    Cleared = "🆗"
+                //};
+                //var saveResult = api.SaveTransactionAsync(testTransaction).Result;
 
                 #endregion
 
                 #region GetCategoryTransfers
 
-                var categoryTranfers = api.GetCategoryTransfersAsync(9).Result;
-                foreach(var tranfer in categoryTranfers)
-                {
-                    Console.WriteLine($"{tranfer.Date}  {tranfer.Amount} {tranfer.FromCategory} {tranfer.ToCategory} {tranfer.Memo}");
-                }
+                //var categoryTranfers = api.GetCategoryTransfersAsync(9).Result;
+                //foreach(var tranfer in categoryTranfers)
+                //{
+                //    Console.WriteLine($"{tranfer.Date}  {tranfer.Amount} {tranfer.FromCategory} {tranfer.ToCategory} {tranfer.Memo}");
+                //}
 
                 #endregion
 
                 #region SaveCategoryTransfer
 
-                var categoryTransfer = new CategoryTransfer()
-                {
-                    Date = DateTime.Today,
-                    Amount = 10000,
-                    FromCategory = "Available to budget",
-                    ToCategory = "Продукты",
-                    Memo = "Test"
-                };
-                var result = api.SaveCategoryTranferAsync(categoryTransfer).Result;
+                //var categoryTransfer = new CategoryTransfer()
+                //{
+                //    Date = DateTime.Today,
+                //    Amount = 10000,
+                //    FromCategory = "Available to budget",
+                //    ToCategory = "Продукты",
+                //    Memo = "Test"
+                //};
+                //var result = api.SaveCategoryTranferAsync(categoryTransfer).Result;
                 Console.WriteLine(result);
 
                 #endregion
 
                 #region GetAccountTransfers
 
-                var accountTranfers = api.GetAccountTranfersAsync().Result;
-                foreach (var accountTransfer in accountTranfers)
-                {
-                    Console.WriteLine($"{accountTransfer.Date} {accountTransfer.AccountFrom} {accountTransfer.AccountTo} {accountTransfer.Sum} {accountTransfer.Memo} {accountTransfer.Cleared}");
-                }
+                //var accountTranfers = api.GetAccountTranfersAsync().Result;
+                //foreach (var accountTransfer in accountTranfers)
+                //{
+                //    Console.WriteLine($"{accountTransfer.Date} {accountTransfer.AccountFrom} {accountTransfer.AccountTo} {accountTransfer.Sum} {accountTransfer.Memo} {accountTransfer.Cleared}");
+                //}
 
                 #endregion
 
                 #region SaveAccountTransfer
 
-                var accountTransfer = new AccountTransfer()
-                {
-                    Date = DateTime.Today,
-                    AccountFrom = YOUR_ACCOUNT,
-                    AccountTo = YOUR_ACCOUNT,
-                    Sum = 10000,
-                    Cleared = "🆗",
-                    Memo = "Test"
-                };
-                var saveResult = api.SaveAccountTransferAsync(accountTransfer).Result;
-                Console.WriteLine(saveResult);
+                //var accountTransfer = new AccountTransfer()
+                //{
+                //    Date = DateTime.Today,
+                //    AccountFrom = YOUR_ACCOUNT,
+                //    AccountTo = YOUR_ACCOUNT,
+                //    Sum = 10000,
+                //    Cleared = "🆗",
+                //    Memo = "Test"
+                //};
+                //var saveResult = api.SaveAccountTransferAsync(accountTransfer).Result;
+                //Console.WriteLine(saveResult);
 
                 #endregion
             }
