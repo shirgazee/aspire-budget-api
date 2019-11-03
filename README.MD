@@ -49,3 +49,14 @@ Account transfers: all or last n. Saving account transfers.
 List<AccountTransfer> accountTranfers = await api.GetAccountTranfersAsync();
 bool saveResult = await api.SaveAccountTransferAsync(accountTransfer);
 ```
+
+## Using TestConsoleApp
+
+Put your Google API Credentials JSON to root folder of TestConsoleApp. Create a file appsettings.Development.json and copy the content of appsettings.json.
+
+```
+{
+  "sheetId": "YOUR_ASPIRE_GOOGLE_SHEET_ID",
+  "apiCredentialsFile": "NAME_OF_CREDENTIALS_FILE" 
+}
+```
