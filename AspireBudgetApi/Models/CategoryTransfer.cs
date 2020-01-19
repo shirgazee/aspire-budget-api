@@ -14,30 +14,30 @@ namespace AspireBudgetApi.Models
         public string ToCategory { get; set; }
         public string Memo { get; set; }
 
-        public static List<object> ToGoogleRow(CategoryTransfer tranfer)
+        public static List<object> ToGoogleRow(CategoryTransfer transfer)
         {
-            if (tranfer.Date == null || tranfer.Date < Options.GoogleStartDate)
+            if (transfer.Date == null || transfer.Date < Options.GoogleStartDate)
             {
                 throw new ArgumentException($"Incorrect date in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
 
-            if(string.IsNullOrWhiteSpace(tranfer.FromCategory))
+            if(string.IsNullOrWhiteSpace(transfer.FromCategory))
             {
                 throw new ArgumentException($"No FromCategory specified in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
 
-            if (string.IsNullOrWhiteSpace(tranfer.ToCategory))
+            if (string.IsNullOrWhiteSpace(transfer.ToCategory))
             {
                 throw new ArgumentException($"No ToCategory specified in {nameof(Transaction)}.{nameof(ToGoogleRow)} initializer");
             }
 
             var result = new List<object>
             {
-                tranfer.Date.ToString("yyyy-MM-dd"),
-                tranfer.Amount.ToString(CultureInfo.InvariantCulture),
-                tranfer.FromCategory.ToString(),
-                tranfer.ToCategory.ToString(),
-                tranfer.Memo?.ToString() ?? ""
+                transfer.Date.ToString("yyyy-MM-dd"),
+                transfer.Amount.ToString(CultureInfo.InvariantCulture),
+                transfer.FromCategory.ToString(),
+                transfer.ToCategory.ToString(),
+                transfer.Memo?.ToString() ?? ""
             };
 
             return result;

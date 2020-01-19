@@ -82,7 +82,7 @@ namespace AspireBudgetApi
             return result;
         }
 
-        public async Task<List<AccountTransfer>> GetAccountTranfersAsync(int lastCount = 0)
+        public async Task<List<AccountTransfer>> GetAccountTransfersAsync(int lastCount = 0)
         {
             var list = await GetTransactionsAndAccountTransfersAsync();
 
@@ -139,7 +139,7 @@ namespace AspireBudgetApi
 
                 if (t2 == null)
                 {
-                    _logger.LogError($"Did not find matching account tranfer at {t1.Date.ToShortDateString()}");
+                    _logger.LogError($"Did not find matching account transfer at {t1.Date.ToShortDateString()}");
                     continue;
                 }
 
@@ -151,7 +151,7 @@ namespace AspireBudgetApi
 
             if(transactions.Count != 0)
             {
-                _logger.LogError("Did not find matching account tranfers, please recheck your google sheet.");
+                _logger.LogError("Did not find matching account transfers, please recheck your google sheet.");
             }
 
             return result;
@@ -200,7 +200,8 @@ namespace AspireBudgetApi
             }
             return result;
         }
-        public async Task<bool> SaveCategoryTranferAsync(CategoryTransfer transfer)
+
+        public async Task<bool> SaveCategoryTransferAsync(CategoryTransfer transfer)
         {
             IList<object> row = null;
             try
@@ -240,6 +241,35 @@ namespace AspireBudgetApi
             appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
             var response = await appendRequest.ExecuteAsync();
             return response.Updates.UpdatedRows == 1;
+        }
+
+        public async Task<List<DashboardRow>> GetDashboardAsync()
+        {
+            var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.DashboardRange);
+            request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
+            var response = await request.ExecuteAsync();
+            var values = response.Values;
+
+            var result = new List<DashboardRow>();
+            if (values == null || values.Count == 0)
+            {
+                return result;
+            }
+
+            foreach (var row in values)
+            {
+                try
+                {
+                    var dashboardRow = DashboardRow.FromGoogleRow(row);
+                    result.Add(dashboardRow);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "DashboardRow instancing error");
+                }
+            }
+
+            return result;
         }
 
         public void Dispose()

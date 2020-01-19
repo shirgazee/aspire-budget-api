@@ -89,14 +89,14 @@ namespace TestConsoleApp
                 //    ToCategory = "Продукты",
                 //    Memo = "Test"
                 //};
-                //var result = api.SaveCategoryTranferAsync(categoryTransfer).Result;
-                Console.WriteLine(result);
+                //var result = api.SaveCategoryTransferAsync(categoryTransfer).Result;
+                //Console.WriteLine(result);
 
                 #endregion
 
                 #region GetAccountTransfers
 
-                //var accountTranfers = api.GetAccountTranfersAsync().Result;
+                //var accountTranfers = api.GetAccountTransfersAsync().Result;
                 //foreach (var accountTransfer in accountTranfers)
                 //{
                 //    Console.WriteLine($"{accountTransfer.Date} {accountTransfer.AccountFrom} {accountTransfer.AccountTo} {accountTransfer.Sum} {accountTransfer.Memo} {accountTransfer.Cleared}");
@@ -117,6 +117,23 @@ namespace TestConsoleApp
                 //};
                 //var saveResult = api.SaveAccountTransferAsync(accountTransfer).Result;
                 //Console.WriteLine(saveResult);
+
+                #endregion
+
+                #region GetDashboard
+
+                //var dashboard = api.GetDashboardAsync().Result;
+                //foreach (var row in dashboard)
+                //{
+                //    if (row.Type == DashboardRowType.Group)
+                //    {
+                //        Console.WriteLine($"** {row.Name} **");
+                //    }
+                //    else
+                //    {
+                //        Console.WriteLine($"-- {row.Name}. Av.: {row.Available}, Spent: {row.Spent}, Targ. {row.Target}, Goal: {row.Goal}, Budg.: {row.Budgeted}");
+                //    }
+                //}
 
                 #endregion
             }
