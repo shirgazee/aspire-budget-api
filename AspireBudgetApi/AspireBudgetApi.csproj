@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RepositoryUrl>https://github.com/danyae/aspire-budget-api.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <Title>AspireBudgetApi</Title>
+    <Description>.Net Standard Library to access Aspire Budget Google Sheet by https://aspirebudget.com</Description>
+    <PackageProjectUrl>https://github.com/danyae/aspire-budget-api.git</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
