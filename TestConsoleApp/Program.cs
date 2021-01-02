@@ -1,7 +1,5 @@
-﻿using AspireBudgetApi.Models;
-using System;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 
@@ -9,7 +7,7 @@ namespace TestConsoleApp
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())

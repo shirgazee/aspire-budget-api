@@ -1,7 +1,4 @@
 ﻿using AspireBudgetApi.Models;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,69 +11,95 @@ namespace AspireBudgetApi
 {
     public class AspireBudgetApi : IDisposable
     {
-        private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
-
-        private static SheetsService GetSheetsService(string credentialsJson)
-        {
-            var serviceInitializer = new BaseClientService.Initializer
-            {
-                HttpClientInitializer = GoogleCredential.FromJson(credentialsJson).CreateScoped(Scopes)
-            };
-            return new SheetsService(serviceInitializer);
-        }
-
-        private readonly SheetsService _sheetsService;
-        private readonly string _spreadSheetId;
+        private readonly SheetsServiceWrapper _sheetsService;
+        private readonly INamedRangeService _namedRangeService;
         private readonly ILogger _logger;
 
-        public AspireBudgetApi(string credentialsJson, string spreadSheetId, ILogger logger)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="credentialsJson"></param>
+        /// <param name="spreadSheetId"></param>
+        /// <param name="namedRangeService"></param>
+        /// <param name="logger"></param>
+        public AspireBudgetApi(string credentialsJson, 
+            string spreadSheetId, 
+            INamedRangeService namedRangeService, 
+            ILogger logger = null)
         {
-            _sheetsService = GetSheetsService(credentialsJson);
-            _spreadSheetId = spreadSheetId;
+            _sheetsService = new SheetsServiceWrapper(credentialsJson, spreadSheetId);
+            _namedRangeService = namedRangeService;
             _logger = logger ?? NullLogger.Instance;
         }
 
-        public AspireBudgetApi(string credentialsJson, string spreadSheetId) : this(credentialsJson, spreadSheetId, null)
+        /// <summary>
+        /// Get budget categories
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<string>> GetCategoriesAsync()
         {
+            var categoriesA1Range = _namedRangeService.GetA1Range(TableRangeOptions.ConfigurationData);
+            var reportableCategorySymbolA1Range = _namedRangeService.GetA1Range(ValueRangeOptions.ReportableCategorySymbol);
+            var debtAccountSymbolA1Range = _namedRangeService.GetA1Range(ValueRangeOptions.ReportableCategorySymbol);
+
+            var categoriesResponse = await _sheetsService.GetValues(categoriesA1Range);
+            var reportableCategoryResponse = await _sheetsService.GetValues(reportableCategorySymbolA1Range);
+            var debtAccountSymbolResponse = await _sheetsService.GetValues(debtAccountSymbolA1Range);
+            
+            var table = categoriesResponse.Values;
+            if (table == null || table.Count == 0)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            var reportableCategorySymbol = (string)reportableCategoryResponse.Values.First().First();
+            var debtAccountSymbol= (string)debtAccountSymbolResponse.Values.First().First();
+
+            var categories =
+                from row in table
+                let rowSymbol = row[0].ToString()
+                where rowSymbol == reportableCategorySymbol || rowSymbol == debtAccountSymbol
+                select row[1].ToString();
+
+            return categories;
         }
 
-        public async Task<List<string>> GetCategoriesAsync()
+        /// <summary>
+        /// Get budget accounts
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<string>> GetAccountsAsync()
         {
-            return await GetValuesFromSingleColumn(Options.CategoriesRange);
+            var accountsA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.ConfigurationAccounts);
+            return await GetValuesFromSingleColumn(accountsA1Range);
         }
 
-        public async Task<List<string>> GetAccountsAsync()
+        private async Task<IEnumerable<string>> GetValuesFromSingleColumn(string range)
         {
-            return await GetValuesFromSingleColumn(Options.AccountsRange);
-        }
-
-        private async Task<List<string>> GetValuesFromSingleColumn(string range)
-        {
-            var response = await _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, range).ExecuteAsync();
+            var response = await _sheetsService.GetValues(range);
             var values = response.Values;
             if (values == null || values.Count == 0)
             {
-                return new List<string>();
+                return Enumerable.Empty<string>();
             }
 
-            var result = new List<string>();
-            foreach (var row in values)
-            {
-                result.Add(string.Join("", row.Select(r => r.ToString())));
-            }
-            return result;
+            return values.Select(row => string.Join("", row.Select(r => r.ToString())));
         }
 
-        public async Task<List<Transaction>> GetTransactionsAsync(int lastCount = 0)
+        public async Task<IEnumerable<Transaction>> GetTransactionsAsync(int lastCount = 0)
         {
-            var list = await GetTransactionsAndAccountTransfersAsync();
+            var transactions = await GetTransactionsAndAccountTransfersAsync();
 
-            var result = list.Where(x => x.Category != Options.AccountTransferCategory).ToList();
+            var accountTransferCategoryA1Range = _namedRangeService.GetA1Range(ValueRangeOptions.AccountTransfer);
+            var accountTransferCategoryResponse = await _sheetsService.GetValues(accountTransferCategoryA1Range);
+            var accountTransferCategory = (string)accountTransferCategoryResponse.Values.First().First();
+            
+            var result = transactions.Where(x => x.Category != accountTransferCategory).ToArray();
 
             // not optimal because we cannot be sure that transactions are in correct date order in google sheet
-            if (lastCount > 0 && lastCount < result.Count)
+            if (lastCount > 0 && lastCount < result.Length)
             {
-                result = result.OrderByDescending(x => x.Date).Take(lastCount).OrderBy(x => x.Date).ToList();
+                result = result.OrderByDescending(x => x.Date).Take(lastCount).OrderBy(x => x.Date).ToArray();
             }
 
             return result;
@@ -84,10 +107,14 @@ namespace AspireBudgetApi
 
         public async Task<List<AccountTransfer>> GetAccountTransfersAsync(int lastCount = 0)
         {
-            var list = await GetTransactionsAndAccountTransfersAsync();
+            var transactionsAndTransfers = await GetTransactionsAndAccountTransfersAsync();
+            
+            var accountTransferCategoryA1Range = _namedRangeService.GetA1Range(ValueRangeOptions.AccountTransfer);
+            var accountTransferCategoryResponse = await _sheetsService.GetValues(accountTransferCategoryA1Range);
+            var accountTransferCategory = (string)accountTransferCategoryResponse.Values.First().First();
 
-            var transactions = list.Where(x => x.Category == Options.AccountTransferCategory).ToList();
-            var result = ParseAccountTransfersFromTransactions(transactions);
+            var transactions = transactionsAndTransfers.Where(x => x.Category == accountTransferCategory).ToList();
+            var result = GetAccountTransfersFromTransactions(transactions);
 
             // not optimal because we cannot be sure that transactions are in correct date order in google sheet
             if (lastCount > 0 && lastCount < result.Count)
@@ -100,9 +127,17 @@ namespace AspireBudgetApi
 
         private async Task<List<Transaction>> GetTransactionsAndAccountTransfersAsync()
         {
-            var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.TransactionsRange);
-            request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
-            var response = await request.ExecuteAsync();
+            var transactionsDatesA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsDates);
+            var transactionsOutflowsA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsOutflows);
+            var transactionsInflowsA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsInflows);
+            var transactionsCategoriesA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsCategories);
+            var transactionsAccountsA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsAccounts);
+            var transactionsStatusesA1Range = _namedRangeService.GetA1Range(ColumnRangeOptions.TransactionsStatuses);
+            
+            var transactionsRangeResponse = await _sheetsService.GetValues(accountTransferCategoryA1Range);
+            var transactionsRange = (string)accountTransferCategoryResponse.Values.First().First();
+            
+            var response = await _sheetsService.GetValues(Options.TransactionsRange);
             var values = response.Values;
 
             if (values == null || values.Count == 0)
@@ -120,14 +155,14 @@ namespace AspireBudgetApi
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Transaction instancing error");
+                    _logger.LogError(ex, $"{nameof(Transaction)} instancing error");
                 }
             }
 
             return list;
         }
 
-        private List<AccountTransfer> ParseAccountTransfersFromTransactions(List<Transaction> transactions)
+        private List<AccountTransfer> GetAccountTransfersFromTransactions(List<Transaction> transactions)
         {
             var result = new List<AccountTransfer>();
             while (transactions.Count > 1)
@@ -151,7 +186,7 @@ namespace AspireBudgetApi
 
             if(transactions.Count != 0)
             {
-                _logger.LogError("Did not find matching account transfers, please recheck your google sheet.");
+                _logger.LogError("Did not find matching account transfers, please check your google sheet.");
             }
 
             return result;
@@ -171,9 +206,7 @@ namespace AspireBudgetApi
 
         public async Task<List<CategoryTransfer>> GetCategoryTransfersAsync(int month = 0)
         {
-            var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.CategoryTransfersRange);
-            request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
-            var response = await request.ExecuteAsync();
+            var response = await _sheetsService.GetValues(Options.CategoryTransfersRange);
             var values = response.Values;
 
             if (values == null || values.Count == 0)
@@ -191,7 +224,7 @@ namespace AspireBudgetApi
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "CategoryTransfer instancing error");
+                    _logger.LogError(ex, $"{nameof(CategoryTransfer)} instancing error");
                 }
             }
             if (month > 0 && month < 13)
@@ -203,28 +236,26 @@ namespace AspireBudgetApi
 
         public async Task<bool> SaveCategoryTransferAsync(CategoryTransfer transfer)
         {
-            IList<object> row = null;
+            IList<object> row;
             try
             {
                 row = CategoryTransfer.ToGoogleRow(transfer);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Google row instancing error");
+                _logger.LogError(ex, "Error converting data to google sheets format");
                 return false;
             }
 
             var valueRange = new ValueRange { Values = new List<IList<object>> { row } };
-
-            var appendRequest = _sheetsService.Spreadsheets.Values.Append(valueRange, _spreadSheetId, Options.CategoryTransfersRange);
-            appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            var response = await appendRequest.ExecuteAsync();
-            return response.Updates.UpdatedRows == 1;
+            
+            var response = await _sheetsService.AppendValues(valueRange, Options.CategoryTransfersRange);
+            return response == 1;
         }
 
         public async Task<bool> SaveTransactionAsync(Transaction transaction)
         {
-            IList<object> row = null;
+            IList<object> row;
             try
             {
                 row = Transaction.ToGoogleRow(transaction);
@@ -236,18 +267,15 @@ namespace AspireBudgetApi
             }
 
             var valueRange = new ValueRange { Values = new List<IList<object>> { row } };
-
-            var appendRequest = _sheetsService.Spreadsheets.Values.Append(valueRange, _spreadSheetId, Options.TransactionsRange);
-            appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            var response = await appendRequest.ExecuteAsync();
-            return response.Updates.UpdatedRows == 1;
+            
+            var response = await _sheetsService.AppendValues(valueRange, Options.TransactionsRange);
+            return response == 1;
         }
 
         public async Task<List<DashboardRow>> GetDashboardAsync()
         {
-            var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.DashboardRange);
-            request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
-            var response = await request.ExecuteAsync();
+            var a1Range = _namedRangeService.GetA1Range(TableRangeOptions.DashboardData);
+            var response = await _sheetsService.GetValues(a1Range);
             var values = response.Values;
 
             var result = new List<DashboardRow>();

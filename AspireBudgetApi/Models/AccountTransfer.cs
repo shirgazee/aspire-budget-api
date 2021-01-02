@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AspireBudgetApi.Models
 {
@@ -13,16 +11,16 @@ namespace AspireBudgetApi.Models
         public string Memo { get; set; }
         public string Cleared { get; set; }
 
-        public static AccountTransfer FromTransactions(Transaction t1, Transaction t2)
+        public static AccountTransfer FromTransactions(Transaction t1, Transaction t2, string accountTransferCategoryName)
         {
             if (Math.Abs(t1.Inflow - t2.Outflow) > 0.01 || Math.Abs(t1.Outflow - t2.Inflow) > 0.01)
             {
-                throw new ArgumentException("Invalid parameters data");
+                throw new InvalidOperationException("Values of transactions are different");
             }
 
-            if (t1.Category != Options.AccountTransferCategory || t2.Category != Options.AccountTransferCategory)
+            if (t1.Category != accountTransferCategoryName || t2.Category != accountTransferCategoryName)
             {
-                throw new ArgumentException("Invalid parameters data");
+                throw new ArgumentException($"Transactions do not have necessary category: {accountTransferCategoryName}");
             }
 
             return new AccountTransfer()
@@ -36,23 +34,23 @@ namespace AspireBudgetApi.Models
             };
         }
 
-        public static Transaction[] ToTransactions(AccountTransfer transfer)
+        public static Transaction[] ToTransactions(AccountTransfer transfer, string accountTransferCategoryName)
         {
-            var t1 = new Transaction()
+            var t1 = new Transaction
             {
                 Date = transfer.Date,
                 Account = transfer.AccountFrom,
-                Category = Options.AccountTransferCategory,
+                Category = accountTransferCategoryName,
                 Cleared = transfer.Cleared,
                 Inflow = 0,
                 Outflow = transfer.Sum,
                 Memo = transfer.Memo
             };
-            var t2 = new Transaction()
+            var t2 = new Transaction
             {
                 Date = transfer.Date,
                 Account = transfer.AccountTo,
-                Category = Options.AccountTransferCategory,
+                Category = accountTransferCategoryName,
                 Cleared = transfer.Cleared,
                 Inflow = transfer.Sum,
                 Outflow = 0,

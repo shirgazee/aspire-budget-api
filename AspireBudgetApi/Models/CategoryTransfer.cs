@@ -1,8 +1,6 @@
-﻿using Google.Apis.Sheets.v4.Data;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace AspireBudgetApi.Models
 {
@@ -35,9 +33,9 @@ namespace AspireBudgetApi.Models
             {
                 transfer.Date.ToString("yyyy-MM-dd"),
                 transfer.Amount.ToString(CultureInfo.InvariantCulture),
-                transfer.FromCategory.ToString(),
-                transfer.ToCategory.ToString(),
-                transfer.Memo?.ToString() ?? ""
+                transfer.FromCategory,
+                transfer.ToCategory,
+                transfer.Memo ?? string.Empty
             };
 
             return result;

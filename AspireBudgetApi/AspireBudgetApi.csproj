@@ -8,10 +8,11 @@
     <Description>.Net Standard Library to access Aspire Budget Google Sheet by https://aspirebudget.com</Description>
     <PackageProjectUrl>https://github.com/danyae/aspire-budget-api.git</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.41.1.1754" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.49.0.2146" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
   </ItemGroup>
 
