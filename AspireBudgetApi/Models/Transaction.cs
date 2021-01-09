@@ -1,20 +1,38 @@
-﻿using Google.Apis.Sheets.v4.Data;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace AspireBudgetApi.Models
 {
     public class Transaction
     {
-        public DateTime Date { get; set; }
-        public double Outflow { get; set; }
-        public double Inflow { get; set; }
-        public string Category { get; set; }
-        public string Account { get; set; }
-        public string Memo { get; set; }
-        public string Cleared { get; set; }
+        public DateTime Date { get; private set; }
+        public double Outflow { get; private set; }
+        public double Inflow { get; private set; }
+        public string Category { get; private set; }
+        public string Account { get; private set; }
+        public string Memo { get; private set; }
+        public string Cleared { get; private set; }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public Transaction(DateTime date, 
+            double outflow, 
+            double inflow, 
+            string category, 
+            string account, 
+            string memo = null, 
+            string cleared = null)
+        {
+            Date = date;
+            Outflow = outflow;
+            Inflow = inflow;
+            Category = category ?? throw new ArgumentNullException(nameof(category));
+            Account = account ?? throw new ArgumentNullException(nameof(account));
+            Memo = memo;
+            Cleared = cleared;
+        }
 
         public static List<object> ToGoogleRow(Transaction transaction)
         {
@@ -69,13 +87,13 @@ namespace AspireBudgetApi.Models
             double.TryParse(row[1].ToString(), out var outflow);
             double.TryParse(row[2].ToString(), out var inflow);
             var result = new Transaction
-            {
-                Date = Options.GoogleStartDate.AddDays(days),
-                Outflow = outflow,
-                Inflow = inflow,
-                Category = row[3].ToString().Trim(),
-                Account = row[4].ToString().Trim(),
-            };
+            (
+                Options.GoogleStartDate.AddDays(days),
+                outflow,
+                inflow,
+                row[3].ToString().Trim(),
+                row[4].ToString().Trim()
+            );
             if(row.Count > 5)
             {
                 result.Memo = row[5].ToString();
