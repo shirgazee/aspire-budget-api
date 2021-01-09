@@ -6,15 +6,30 @@ namespace AspireBudgetApi.Models
 {
     public class DashboardRow
     {
-        public string Name { get; set; }
-        public DashboardRowType Type { get; set; }
-        public double Available { get; set; }
-        public double Spent { get; set; }
-        public double Target { get; set; }
-        public double Goal { get; set; }
-        public double Budgeted { get; set; }
-        public bool IsGoal { get; set; }
+        public string Name { get; private set; }
+        public DashboardRowType Type { get; private set; }
+        public double Available { get; private set; }
+        public double Spent { get; private set; }
+        public double Target { get; private set; }
+        public double Goal { get; private set; }
+        public double Budgeted { get; private set; }
+        public bool IsGoal { get; private set; }
 
+        /// <summary>
+        /// Set row type (unknown when extracted from google row)
+        /// </summary>
+        /// <param name="type"></param>
+        public void SetType(DashboardRowType type)
+        {
+            Type = type;
+        }
+
+        /// <summary>
+        /// Extract info from google row
+        /// </summary>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static DashboardRow FromGoogleRow(IList<object> row)
         {
             if (row.Count == 0 || string.IsNullOrEmpty(row[0].ToString()))
@@ -26,11 +41,6 @@ namespace AspireBudgetApi.Models
             {
                 Name = row[0].ToString().Trim()
             };
-            if (row.Count == 1)
-            {
-                result.Type = DashboardRowType.Group;
-                return result;
-            }
 
             if (row.Count != 8)
             {

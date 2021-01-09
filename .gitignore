@@ -7,7 +7,7 @@
 *.userosscache
 *.sln.docstates
 appsettings.Development.json
-AspireBudget API-*
+docker-compose.debug.yml
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

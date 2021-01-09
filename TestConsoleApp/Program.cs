@@ -21,7 +21,7 @@ namespace TestConsoleApp
             var sheetId = configuration.GetSection("sheetId").Value;
             string json = File.ReadAllText(apiCredentialsFile, Encoding.UTF8);
 
-            using (var api = new AspireBudgetApi.AspireBudgetApi(json, sheetId))
+            using (var api = new AspireBudgetApi.AspireApi(json, sheetId))
             {
                 #region GetCategories
 

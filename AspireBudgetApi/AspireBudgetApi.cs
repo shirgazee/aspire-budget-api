@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace AspireBudgetApi
 {
-    public class AspireBudgetApi : IDisposable
+    public class AspireApi : IDisposable, IAspireApi
     {
         private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
 
@@ -29,15 +29,11 @@ namespace AspireBudgetApi
         private readonly string _spreadSheetId;
         private readonly ILogger _logger;
 
-        public AspireBudgetApi(string credentialsJson, string spreadSheetId, ILogger logger)
+        public AspireApi(string credentialsJson, string spreadSheetId, ILogger logger = null)
         {
             _sheetsService = GetSheetsService(credentialsJson);
             _spreadSheetId = spreadSheetId;
             _logger = logger ?? NullLogger.Instance;
-        }
-
-        public AspireBudgetApi(string credentialsJson, string spreadSheetId) : this(credentialsJson, spreadSheetId, null)
-        {
         }
 
         public async Task<List<string>> GetCategoriesAsync()
@@ -245,6 +241,8 @@ namespace AspireBudgetApi
 
         public async Task<List<DashboardRow>> GetDashboardAsync()
         {
+            var categories = await GetCategoriesAsync();
+            
             var request = _sheetsService.Spreadsheets.Values.Get(_spreadSheetId, Options.DashboardRange);
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
             var response = await request.ExecuteAsync();
@@ -261,6 +259,10 @@ namespace AspireBudgetApi
                 try
                 {
                     var dashboardRow = DashboardRow.FromGoogleRow(row);
+                    if (!categories.Contains(dashboardRow.Name))
+                    {
+                        dashboardRow.SetType(DashboardRowType.Group);
+                    }
                     result.Add(dashboardRow);
                 }
                 catch (Exception e)
@@ -270,6 +272,13 @@ namespace AspireBudgetApi
             }
 
             return result;
+        }
+
+        public async Task ClearTransactionsAndAccountTransfers()
+        {
+            var request = _sheetsService.Spreadsheets.Values.Clear(new ClearValuesRequest(), _spreadSheetId,
+                Options.TransactionsRange);
+            await request.ExecuteAsync();
         }
 
         public void Dispose()
