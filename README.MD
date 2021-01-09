@@ -34,7 +34,7 @@ services.AddScoped<IAspireApi, AspireApi>(x =>
     return new AspireApi(json, options.Value.SheetId, logger);
 });
 ```
-You find see a working example in `TestWebApi` project.
+You can find a working example in `TestWebApi` project.
 
 ## List of available methods
 
@@ -67,7 +67,7 @@ bool saveResult = await api.SaveAccountTransferAsync(accountTransfer);
 Update `AspireApiOptions` section in appsettings.json file with your Google Sheet Id and base64-encoded content of your API credentials json file.\
 Then run TestWebApi project. It will open up a new browser window with Swagger url.
 
-```
+```json
 "AspireApiOptions" : {
     "SheetId": "",
     "ApiCredentialsBase64": ""
