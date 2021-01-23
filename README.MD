@@ -2,6 +2,8 @@
 
 Current version of this library supports **Aspire Budget v3.3**.
 
+![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/AspireBudgetApi)
+
 At first you need to turn on the Google Sheets API and obtain credentials. Follow the link and repeat steps under "Configuring Google infrastracture": ([https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3](https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3 "https://medium.com/@equisept/net-core-google-sheets-api-read-write-5edd919868e3")).
 
 In short 😁, you will: 
