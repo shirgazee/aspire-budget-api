@@ -16,6 +16,40 @@ namespace AspireBudgetApi.Models
         public bool IsGoal { get; private set; }
 
         /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <param name="available"></param>
+        /// <param name="spent"></param>
+        /// <param name="target"></param>
+        /// <param name="goal"></param>
+        /// <param name="budgeted"></param>
+        /// <param name="isGoal"></param>
+        public DashboardRow(string name,
+            DashboardRowType type,
+            double available,
+            double spent,
+            double target,
+            double goal,
+            double budgeted,
+            bool isGoal)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Type = type;
+            Available = available;
+            Spent = spent;
+            Target = target;
+            Goal = goal;
+            Budgeted = budgeted;
+            IsGoal = isGoal;
+        }
+
+        private DashboardRow()
+        {
+        }
+        
+        /// <summary>
         /// Set row type (unknown when extracted from google row)
         /// </summary>
         /// <param name="type"></param>

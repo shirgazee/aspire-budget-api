@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace AspireBudgetApi
 {
-    public class AspireApi : IDisposable, IAspireApi
+    public sealed class AspireApi : IAspireApi
     {
         private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
 

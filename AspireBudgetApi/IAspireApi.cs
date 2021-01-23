@@ -1,10 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AspireBudgetApi.Models;
 
 namespace AspireBudgetApi
 {
-    public interface IAspireApi
+    public interface IAspireApi : IDisposable
     {
         Task<List<string>> GetCategoriesAsync();
         Task<List<string>> GetAccountsAsync();
